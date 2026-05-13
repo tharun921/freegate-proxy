@@ -8,7 +8,7 @@
   "dependencies": {
     "@sparticuz/chromium": "^123.0.1",
     "express": "^4.18.0",
-    "puppeteer-core": "^22.0.0"
+    "rebrowser-puppeteer-core": "^22.15.0"
   },
   "engines": {
     "node": "20.x"
