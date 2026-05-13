@@ -118,24 +118,33 @@ function zenRowsFetch(targetUrl) {
 }
 
 // ── Rewrite links through proxy ─────────────────────────────
+// Only proxy href (navigation) - let src (images/CSS/JS) load directly from CDN
 function rewrite(html, origin, base) {
-  // Force all absolute URLs through proxy
+  // Only rewrite href= navigation links through proxy
   html = html.replace(
-    /(href|src|action)=["'](https?:\/\/[^"' >]+)["']/gi,
-    (_, a, u) => {
-      // Force http -> https in proxied URLs
-      const safe = u.replace(/^http:\/\//i, 'https://');
-      return `${a}="${base}${encodeURIComponent(safe)}"`;
-    }
+    /\bhref=["'](https?:\/\/[^"' >]+)["']/gi,
+    (_, u) => `href="${base}${encodeURIComponent(u.replace(/^http:\/\//i, 'https://'))}"`
   );
-  // Rewrite relative URLs
+  // Rewrite relative href= through proxy
   html = html.replace(
-    /(href|src|action)=["'](\/(?!\/)[^"']*|\/?)["|']/gi,
-    (m, a, u) => {
+    /\bhref=["'](\/[^"'#][^"']*)["']/gi,
+    (m, u) => {
       try {
         const abs = new URL(u, origin).href.replace(/^http:\/\//i, 'https://');
-        return `${a}="${base}${encodeURIComponent(abs)}"`;
+        return `href="${base}${encodeURIComponent(abs)}"`;
       } catch { return m; }
+    }
+  );
+  // Fix src= and srcset= to be absolute HTTPS (load directly, not via proxy)
+  html = html.replace(
+    /\bsrc=["'](https?:\/\/[^"' >]+)["']/gi,
+    (_, u) => `src="${u.replace(/^http:\/\//i, 'https://')}"`
+  );
+  html = html.replace(
+    /\bsrc=["'](\/[^"' >]+)["']/gi,
+    (m, u) => {
+      try { return `src="${new URL(u, origin).href.replace(/^http:\/\//i, 'https://')}"` }
+      catch { return m; }
     }
   );
   return html.replace('</head>',
@@ -146,7 +155,7 @@ function rewrite(html, origin, base) {
     var a=e.target.closest('a[href]');if(!a)return;
     var h=a.getAttribute('href');
     if(!h||h.startsWith('#')||h.startsWith('javascript:')||h.startsWith('mailto:'))return;
-    try{e.preventDefault();location.href=B+encodeURIComponent(new URL(h,O).href);}catch(e){}
+    try{e.preventDefault();location.href=B+encodeURIComponent(new URL(h,O).href.replace(/^http:/,'https:'));}catch(e){}
   },true);
 })();
 </script></head>`
