@@ -1,5 +1,5 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 const path = require('path');
 
 const app = express();
@@ -12,21 +12,27 @@ let _launching = false;
 async function getBrowser() {
   if (_browser && _browser.isConnected()) return _browser;
   if (_launching) {
-    // Wait for browser that's already launching
     await new Promise(r => setTimeout(r, 3000));
     return _browser;
   }
   _launching = true;
   try {
+    // Use system Chromium installed via build command
+    const executablePath =
+      process.env.PUPPETEER_EXECUTABLE_PATH ||
+      '/usr/bin/chromium'  ||
+      '/usr/bin/chromium-browser';
+
     _browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
+      executablePath,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
         '--no-zygote',
-        '--single-process',                        // saves RAM on free tier
+        '--single-process',
         '--disable-blink-features=AutomationControlled',
         '--disable-features=IsolateOrigins,site-per-process',
         '--window-size=1280,720',
