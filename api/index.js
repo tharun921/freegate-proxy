@@ -189,7 +189,8 @@ app.get('/api', async (req, res) => {
 
     await page.setRequestInterception(true);
     page.on('request', r => {
-      if (['media', 'font'].includes(r.resourceType())) return r.abort();
+      // Only block fonts to save memory - allow images/CSS/JS
+      if (r.resourceType() === 'font') return r.abort();
       r.continue();
     });
 
