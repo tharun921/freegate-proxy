@@ -117,17 +117,25 @@ function zenRowsFetch(targetUrl) {
   });
 }
 
-// ── Rewrite links ─────────────────────────────────────────────
+// ── Rewrite links through proxy ─────────────────────────────
 function rewrite(html, origin, base) {
+  // Force all absolute URLs through proxy
   html = html.replace(
     /(href|src|action)=["'](https?:\/\/[^"' >]+)["']/gi,
-    (_, a, u) => `${a}="${base}${encodeURIComponent(u)}"`
+    (_, a, u) => {
+      // Force http -> https in proxied URLs
+      const safe = u.replace(/^http:\/\//i, 'https://');
+      return `${a}="${base}${encodeURIComponent(safe)}"`;
+    }
   );
+  // Rewrite relative URLs
   html = html.replace(
-    /(href|src|action)=["'](\/(?!\/)[^"']*|\/?)["']/gi,
+    /(href|src|action)=["'](\/(?!\/)[^"']*|\/?)["|']/gi,
     (m, a, u) => {
-      try { return `${a}="${base}${encodeURIComponent(new URL(u, origin).href)}"`; }
-      catch { return m; }
+      try {
+        const abs = new URL(u, origin).href.replace(/^http:\/\//i, 'https://');
+        return `${a}="${base}${encodeURIComponent(abs)}"`;
+      } catch { return m; }
     }
   );
   return html.replace('</head>',
@@ -173,8 +181,10 @@ app.get('/api', async (req, res) => {
   let parsed;
   try { parsed = new URL(target); } catch { return res.redirect('/'); }
 
-  const origin = parsed.origin;
-  const base = `${req.protocol}://${req.headers.host}/api?url=`;
+  const origin = parsed.origin.replace(/^http:\/\//i, 'https://');
+  // Use X-Forwarded-Proto for real protocol (Render terminates SSL)
+  const proto = req.headers['x-forwarded-proto'] || req.protocol;
+  const base = `${proto}://${req.headers.host}/api?url=`;
 
   const cached = cache.get(target);
   if (cached && Date.now() - cached.time < 30000) {
