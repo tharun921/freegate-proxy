@@ -1,17 +1,16 @@
 {
-  "name": "freegate-stealth-proxy",
+  "name": "freegate-proxy",
   "version": "1.0.0",
-  "description": "Stealth proxy using system Chromium",
   "main": "api/index.js",
   "scripts": {
-    "start": "node api/index.js",
-    "build": "apt-get install -y chromium 2>/dev/null || true"
+    "start": "node api/index.js"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^123.0.1",
     "express": "^4.18.0",
     "puppeteer-core": "^22.0.0"
   },
   "engines": {
-    "node": "20.x"
+    "node": ">=18.0.0"
   }
 }

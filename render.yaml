@@ -1,13 +1,11 @@
 services:
   - type: web
-    name: freegate-stealth-proxy
+    name: freegate-proxy-1
     env: node
     region: singapore
     plan: free
     buildCommand: npm install
     startCommand: node api/index.js
     envVars:
-      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
-        value: "false"
       - key: NODE_ENV
         value: production
